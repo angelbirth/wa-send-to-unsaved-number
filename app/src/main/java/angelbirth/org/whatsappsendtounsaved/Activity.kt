@@ -12,6 +12,24 @@ import android.widget.EditText
 class Activity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        var num = intent?.takeIf { it.action == Intent.ACTION_VIEW && it.data != null }?.data?.host
+        num?.let {
+            when {
+                it.matches("[1-9][0-9]{1,15}".toRegex()) -> {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$num")))
+                    finish()
+                }
+                it.matches("""08[1-9]\d{7,10}""".toRegex()) -> {
+                    num = it.replace(Regex("""^0(.*)"""), "62$1")
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$num")))
+                    finish()
+                }
+                it.matches(Regex("""\+(\d+)""")) -> {
+                    num = it.replace(Regex("""\+(\d+)"""), "$1")
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$num")))
+                }
+            }
+        }
         val wa = packageManager.getInstalledPackages(PackageManager.COMPONENT_ENABLED_STATE_DEFAULT)
                 .firstOrNull {
                     it.packageName == "com.whatsapp"
@@ -34,12 +52,15 @@ class Activity : Activity() {
                 }
                 setView(ed)
                 setPositiveButton(android.R.string.ok) { _, _ ->
-                    var num = ed.text.toString()
-                    if (num.matches("[1-9][0-9]{1,15}".toRegex())) {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$num")))
-                    } else if (num.matches("""08[1-9]\d{7,10}""".toRegex())) {
-                        num = num.replace(Regex("""^0.*"""), "62")
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/${num}")))
+                    var num1 = num ?: ed.text.toString()
+                    if (num1.matches("[1-9][0-9]{1,15}".toRegex())) {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$num1")))
+                    } else if (num1.matches("""08[1-9]\d{7,10}""".toRegex())) {
+                        num1 = num1.replace(Regex("""^0(\d*)"""), "62$1")
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$num1")))
+                    } else if (num1.matches(Regex("""\+(\d+)"""))) {
+                        num1 = num1.replace(Regex("""\+(\d+)"""), "$1")
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$num1")))
                     }
                     finish()
                 }
